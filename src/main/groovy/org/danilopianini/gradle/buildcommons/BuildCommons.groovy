@@ -187,6 +187,7 @@ class BuildCommons implements Plugin<Project> {
             ignoreFailures = true
             configFile = new File("${project.rootProject.projectDir}/${project.checkstyleConfigFile}")
             toolVersion = project.checkstyleVersion
+            configDir = project.rootDir
         }
         def xsl = BuildCommons.getClassLoader().getResourceAsStream('checkstyle-noframes-sorted.xsl').text
         project.checkstyleMain {
