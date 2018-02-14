@@ -36,6 +36,7 @@ The following Gradle properties are required for this plugin in order to work. Y
 * `gradleWrapperVersion` the version of Gradle to be used for the wrapper
 * `jdkVersion` the target version of the JDK
 * `junitVersion` the JUnit version
+* `checkstyleVersion` the Checkstyle version
 * `pmdVersion` the PMD version
 * `pmdConfigFile` the path of the file where your pmd configuration is stored, relative to the project
 * `pmdTargetJdk` the PMD target JDK. Usually `1.7`
