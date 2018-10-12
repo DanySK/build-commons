@@ -69,10 +69,8 @@ class BuildCommons implements Plugin<Project> {
             doclet
         }
         if (isParent) {
-            project.task(type: Wrapper, 'wrapper') {
-                doLast {
-                    gradleVersion = project.gradleWrapperVersion
-                }
+            project.wrapper {
+                gradleVersion = project.gradleWrapperVersion
             }
         }
         // Tests
