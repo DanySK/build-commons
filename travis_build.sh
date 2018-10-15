@@ -3,5 +3,5 @@ openssl aes-256-cbc -K $encrypted_71fd7511358b_key -iv $encrypted_71fd7511358b_i
 bash prepare_environment.sh
 set -e
 ./gradlew
-./gradlew uploadArchives
+./gradlew publishMainPublicationToMavenRepository
 ./gradlew publishPlugins --continue || exit 0
