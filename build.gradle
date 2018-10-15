@@ -1,6 +1,5 @@
 apply plugin: 'groovy'
 apply plugin: 'eclipse'
-
 buildscript {
     repositories {
         maven { url "https://plugins.gradle.org/m2/" }
@@ -12,6 +11,7 @@ buildscript {
 }
 apply plugin: 'org.ajoberstar.grgit'
 apply plugin: 'signing'
+apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'com.gradle.plugin-publish'
 
@@ -23,7 +23,6 @@ dependencies {
     compile gradleApi()
     compile "org.ajoberstar:gradle-git:${grgitVersion}"
     compile "org.jboss.apiviz:apiviz:${apivizVersion}"
-    compile "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:${nexusStagingVersion}"
 }
 
 sourceCompatibility = 1.6
@@ -99,7 +98,6 @@ pluginBundle {
     }
 }
 
-apply plugin: 'maven'
 apply plugin: 'signing'
 
 publishing {
