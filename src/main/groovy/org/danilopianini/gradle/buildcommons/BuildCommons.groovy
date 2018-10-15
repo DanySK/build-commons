@@ -253,7 +253,7 @@ class BuildCommons implements Plugin<Project> {
             sign project.publishing.publications.main
         }
         project.tasks.withType(Sign) {
-            onlyIf { Boolean.parseBoolean(signArchivesIsEnabled) }
+            onlyIf { Boolean.parseBoolean(project.signArchivesIsEnabled) }
         }
         // Default tasks
         makeDependency(project, 'buildDashboard', 'jacocoTestReport')
