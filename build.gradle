@@ -1,19 +1,19 @@
 apply plugin: 'groovy'
 apply plugin: 'eclipse'
-
 buildscript {
     repositories {
         maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
-        classpath "com.gradle.publish:plugin-publish-plugin:${gradlePublishPluginVersion}"
         classpath "org.ajoberstar:gradle-git:${grgitVersion}"
-        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:${nexusStagingVersion}"
+        classpath "com.gradle.publish:plugin-publish-plugin:${gradlePublishPluginVersion}"
     }
 }
-apply plugin: "com.gradle.plugin-publish"
-apply plugin: "org.ajoberstar.grgit"
-apply plugin: 'io.codearte.nexus-staging'
+apply plugin: 'org.ajoberstar.grgit'
+apply plugin: 'signing'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'com.gradle.plugin-publish'
 
 repositories {
     mavenCentral()
@@ -23,7 +23,6 @@ dependencies {
     compile gradleApi()
     compile "org.ajoberstar:gradle-git:${grgitVersion}"
     compile "org.jboss.apiviz:apiviz:${apivizVersion}"
-    compile "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:${nexusStagingVersion}"
 }
 
 sourceCompatibility = 1.6
@@ -99,52 +98,57 @@ pluginBundle {
     }
 }
 
-apply plugin: 'maven'
 apply plugin: 'signing'
 
-signing {
-    sign configurations.archives
-}
-signArchives.onlyIf { Boolean.parseBoolean(signArchivesIsEnabled) }
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                    authentication(userName: ossrhUsername, password: ossrhPassword)
-            }
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                    authentication(userName: ossrhUsername, password: ossrhPassword)
-            }
-            pom.project {
-                name artifactId
-                description projectDescription
-                packaging 'jar'
-                url "$scmRootUrl/$artifactId"
+publishing {
+    publications {
+        main(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+            pom {
+                name = artifactId
+                description = projectDescription
+                packaging = 'jar'
+                url = "$scmRootUrl/$artifactId".toString()
                 licenses {
                     license {
-                        name licenseName
-                        url licenseUrl
+                        name = licenseName
+                        url = licenseUrl
                     }
                 }
                 developers {
                     developer {
-                            name 'Danilo Pianini'
-                            email 'danilo.pianini@gmail.com'
-                            url 'http://www.danilopianini.org/'
+                            name = 'Danilo Pianini'
+                            email = 'danilo.pianini@gmail.com'
+                            url = 'http://www.danilopianini.org/'
                     }
                 }
                 scm {
-                    url "$scmRootUrl/$artifactId"
-                    connection "$scmType:$scmLogin/$scmRepoName"
-                    developerConnection "$scmType:$scmLogin/$scmRepoName"
+                    url = "$scmRootUrl/$artifactId".toString()
+                    connection = "$scmType:$scmLogin/$scmRepoName".toString()
+                    developerConnection = "$scmType:$scmLogin/$scmRepoName".toString()
                 }
+            }
+        }
+    }
+    repositories {
+        maven {
+            url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+            credentials {
+                username = ossrhUsername
+                password = ossrhPassword
             }
         }
     }
 }
 
+signing {
+    sign publishing.publications.main
+}
 
+tasks.withType(Sign) {
+    onlyIf { Boolean.parseBoolean(signArchivesIsEnabled) }
+}
 
 defaultTasks 'clean', 'build', 'check', 'assemble', 'install', 'javadoc'

@@ -7,27 +7,21 @@ import org.gradle.api.artifacts.DependencyResolveDetails
 import org.gradle.api.artifacts.maven.MavenDeployment
 import org.gradle.api.plugins.quality.FindBugs
 import org.gradle.api.plugins.quality.Pmd
+import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.api.tasks.wrapper.Wrapper
 import org.gradle.jvm.tasks.Jar
+import org.gradle.plugins.signing.Sign
 
 class BuildCommons implements Plugin<Project> {
     void apply(Project project) {
         project.apply plugin: 'java'
-        project.apply plugin: 'eclipse'
-        project.apply plugin: 'findbugs'
-        project.apply plugin: 'pmd'
-        project.apply plugin: 'checkstyle'
         project.apply plugin: 'project-report'
         project.apply plugin: 'build-dashboard'
         project.apply plugin: "org.ajoberstar.grgit"
         project.apply plugin: 'jacoco'
-        project.apply plugin: 'maven'
-        project.apply plugin: 'signing'
+        project.apply plugin: 'maven' // For supporting install
         def isParent = project.parent == null
-        if (isParent) {
-            project.apply plugin: 'io.codearte.nexus-staging'
-        }
         project.repositories {
             mavenCentral()
         }
@@ -214,47 +208,52 @@ class BuildCommons implements Plugin<Project> {
                 downloadSources = true
             }
         }
-        // Signing
-        project.apply plugin: 'signing'
-        project.signing {
-            sign project.configurations.archives
-        }
-        project.signArchives.onlyIf { Boolean.parseBoolean(project.signArchivesIsEnabled) }
-        // Maven
-        project.apply plugin: 'maven'
-        project.uploadArchives {
-            repositories {
-                mavenDeployer {
-                    def user = project.ossrhUsername
-                    def pwd = project.ossrhPassword
-                    beforeDeployment { MavenDeployment deployment -> project.signing.signPom(deployment) }
-                    repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                        authentication(userName: user, password: pwd)
-                    }
-                    snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                        authentication(userName: user, password: pwd)
-                    }
-                    pom.project {
-                        name project.artifactId
-                        description project.projectDescription
-                        def ref = "${project.scmRootUrl}/${project.artifactId}"
-                        packaging 'jar'
-                        url ref
+        // Maven Publishing
+        project.apply plugin: 'maven-publish'
+        project.publishing {
+            publications {
+                main(MavenPublication) {
+                    from project.components.java
+                    artifact project.sourcesJar
+                    artifact project.javadocJar
+                    pom {
+                        name = project.artifactId
+                        description = project.projectDescription
+                        def ref = "${project.scmRootUrl}/${project.artifactId}".toString()
+                        packaging = 'jar'
+                        url = ref
                         licenses {
                             license {
-                                name project.licenseName
-                                url project.licenseUrl
+                                name = project.licenseName
+                                url = project.licenseUrl
                             }
                         }
                         scm {
-                            url ref
-                            def scmRef = "${project.scmType}:${project.scmLogin}/${project.scmRepoName}"
-                            connection scmRef
-                            developerConnection scmRef
+                            url = ref
+                            def scmRef = "${project.scmType}:${project.scmLogin}/${project.scmRepoName}".toString()
+                            connection = scmRef
+                            developerConnection = scmRef
                         }
                     }
                 }
             }
+            repositories {
+                maven {
+                    url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+                    credentials {
+                        username = project.ossrhUsername
+                        password = project.ossrhPassword
+                    }
+                }
+            }
+        }
+        // Signing
+        project.apply plugin: 'signing'
+        project.signing {
+            sign project.publishing.publications.main
+        }
+        project.tasks.withType(Sign) {
+            onlyIf { Boolean.parseBoolean(signArchivesIsEnabled) }
         }
         // Default tasks
         makeDependency(project, 'buildDashboard', 'jacocoTestReport')
