@@ -1,6 +1,11 @@
 package org.danilopianini.gradle.buildcommons
 
 import org.gradle.api.Project
+
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
+
 import org.gradle.api.JavaVersion;
 import org.gradle.api.Plugin
 import org.gradle.api.artifacts.DependencyResolveDetails
@@ -36,12 +41,17 @@ class BuildCommons implements Plugin<Project> {
                  */
                 def tags = grgit.tag.list()
                 def tag = tags.find() { it.commit.id == currentSha }
+                def commitId = grgit.head().abbreviatedId
+                def ZonedDateTime date = ZonedDateTime.ofInstant(grgit.head().date.toInstant(), ZoneOffset.UTC)
+                def firstCommit = ZonedDateTime.ofInstant(grgit.log().last().date.toInstant(), ZoneOffset.UTC)
+                def dateId = Long.toString(ChronoUnit.DAYS.between(firstCommit, date), Character.MAX_RADIX)
+                while (dateId.length() < 3) { dateId = "0${dateId}" }
                 if (tag == null) {
-                    project.version = "${project.version}-${grgit.head().abbreviatedId}".take(20)
+                    project.version = "${project.version}+${dateId}.${commitId}".take(20)
                 } else if (tag.name == project.version){
                     println "This is tagged as the official version ${project.version}"
                 } else {
-                    project.version = "${project.version}-${tag.name}-${grgit.head().abbreviatedId}".take(20)
+                    project.version = "${project.version}-${tag.name}-${commitId}".take(20)
                 }
                 println "Due to your git repo status, the project version is detected as ${project.version}"
                 vfile.text = project.version
